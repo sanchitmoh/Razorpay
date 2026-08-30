@@ -226,6 +226,7 @@ jobs:
       - name: Run integration tests
         working-directory: ./reconcile-agent
         run: |
+          pip install pytest-cov
           pytest tests/test_batch_e2e.py tests/test_full_reconciliation.py -v --tb=short
 
   build-status:
