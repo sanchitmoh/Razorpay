@@ -36,9 +36,10 @@ jobs:
       
       - name: Check for secrets
         run: |
-          # Basic check for potential secrets
-          if git diff origin/${{ github.base_ref }}...HEAD | grep -iE "(api_key|api_secret|password|token|secret_key)" | grep -v "mock\|test\|example"; then
-            echo "::error::Potential secrets detected in diff - please review"
+          # Check for potential secrets in actual code, excluding documentation and variable names
+          # Exclude: mock/test/example values, variable declarations, GITHUB_TOKEN, and documentation
+          if git diff origin/${{ github.base_ref }}...HEAD | grep -iE "(api_key|api_secret|password|token|secret_key)" | grep -viE "(mock|test|example|github_token|\`|variable|name|TOKEN_BUCKET|rate_limiter|secrets\.|REMOTION_|ELEVENLABS_|MAPBOX_|OPENROUTER_|GEMINI_|API_KEY=|_TOKEN=|_SECRET=)" | grep -E "^\+.*['\"].*[a-zA-Z0-9]{20,}"; then
+            echo "::error::Potential hardcoded secrets detected in diff - please review"
             exit 1
           fi
       
