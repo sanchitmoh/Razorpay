@@ -50,11 +50,18 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 
 @pytest_asyncio.fixture(scope="function")
 async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
-    """FastAPI test client with database dependency overridden."""
+    """FastAPI test client with database dependency overridden and rate limiting disabled."""
+    from app.core.security import TokenBucketRateLimiter, rate_limiter
+    
     async def override_get_db():
         yield db_session
 
+    # Override rate limiter with very high capacity for tests to prevent 429 errors
+    test_rate_limiter = TokenBucketRateLimiter(capacity=10000, refill_rate=1000.0)
+    
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[rate_limiter] = test_rate_limiter
+    
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c

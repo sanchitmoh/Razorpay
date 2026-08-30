@@ -20,7 +20,7 @@ jobs:
         run: |
           PR_TITLE="${{ github.event.pull_request.title }}"
           # Check if PR title follows conventional commit format
-          if [[ ! "$PR_TITLE" =~ ^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+ ]]; then
+          if ! echo "$PR_TITLE" | grep -qE '^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+'; then
             echo "::warning::PR title should follow conventional commit format"
             echo "::warning::Examples: feat: add new feature, fix(auth): resolve login issue"
           fi
@@ -106,40 +106,46 @@ jobs:
       - name: Comment test results
         if: always()
         uses: actions/github-script@v7
+        continue-on-error: true
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-            
-            const botComment = comments.find(comment => 
-              comment.user.type === 'Bot' && 
-              comment.body.includes('Test Results')
-            );
-            
-            const output = `### Test Results
-            
-            - ✅ Tests completed for commit ${context.sha.substring(0, 7)}
-            - 📊 Check the workflow run for detailed results
-            - 🔗 [View full test report](${context.payload.repository.html_url}/actions/runs/${context.runId})
-            `;
-            
-            if (botComment) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: botComment.id,
-                body: output
-              });
-            } else {
-              await github.rest.issues.createComment({
+            try {
+              const { data: comments } = await github.rest.issues.listComments({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                body: output
               });
+              
+              const botComment = comments.find(comment => 
+                comment.user.type === 'Bot' && 
+                comment.body.includes('Test Results')
+              );
+              
+              const output = `### Test Results
+              
+              - ✅ Tests completed for commit ${context.sha.substring(0, 7)}
+              - 📊 Check the workflow run for detailed results
+              - 🔗 [View full test report](${context.payload.repository.html_url}/actions/runs/${context.runId})
+              `;
+              
+              if (botComment) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: botComment.id,
+                  body: output
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: output
+                });
+              }
+            } catch (error) {
+              console.log('Failed to post comment (likely due to permissions):', error.message);
             }
 
   code-review:
