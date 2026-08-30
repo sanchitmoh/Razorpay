@@ -1,0 +1,36 @@
+# Git & IDE
+.git
+.gitignore
+.idea
+.vscode
+.agents
+*.swp
+*.swo
+
+# Python & Caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+.env
+.venv/
+venv/
+env/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.hypothesis/
+
+# Database & temp files
+*.db-journal
+*.log
+scratch/

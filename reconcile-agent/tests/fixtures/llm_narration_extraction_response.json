@@ -1,0 +1,6 @@
+{
+  "candidate_order_id": null,
+  "candidate_utr": null,
+  "confidence": "low",
+  "reasoning": "Unsolicited transfer, no valid UTR or order reference found in narration."
+}

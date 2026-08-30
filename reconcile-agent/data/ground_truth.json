@@ -1,0 +1,526 @@
+{
+  "metadata": {
+    "total_payments": 50,
+    "expected_matched_payments": 42,
+    "expected_exception_payments": 8,
+    "expected_orphan_bank_entries": 2,
+    "total_records": 52,
+    "target_record_match_rate": 0.8076923076923077
+  },
+  "payment_expectations": [
+    {
+      "payment_id": "pay_test_0001",
+      "order_id": "order_test_0001",
+      "amount_paise": 101200,
+      "expected_utr": "UTR20260801001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0002",
+      "order_id": "order_test_0002",
+      "amount_paise": 210600,
+      "expected_utr": "UTR20260801001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0003",
+      "order_id": "order_test_0003",
+      "amount_paise": 93900,
+      "expected_utr": "UTR20260801001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0004",
+      "order_id": "order_test_0004",
+      "amount_paise": 355600,
+      "expected_utr": "UTR20260801001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0005",
+      "order_id": "order_test_0005",
+      "amount_paise": 189100,
+      "expected_utr": "UTR20260801001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0006",
+      "order_id": "order_test_0006",
+      "amount_paise": 31700,
+      "expected_utr": "UTR20260801001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0007",
+      "order_id": "order_test_0007",
+      "amount_paise": 456400,
+      "expected_utr": "UTR20260801001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0008",
+      "order_id": "order_test_0008",
+      "amount_paise": 492700,
+      "expected_utr": "UTR20260801001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0009",
+      "order_id": "order_test_0009",
+      "amount_paise": 15300,
+      "expected_utr": "UTR20260801001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0010",
+      "order_id": "order_test_0010",
+      "amount_paise": 288700,
+      "expected_utr": "UTR20260801001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0011",
+      "order_id": "order_test_0011",
+      "amount_paise": 285700,
+      "expected_utr": "UTR20260801001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0012",
+      "order_id": "order_test_0012",
+      "amount_paise": 89200,
+      "expected_utr": "UTR20260801001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0013",
+      "order_id": "order_test_0013",
+      "amount_paise": 226600,
+      "expected_utr": "UTR20260801001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0014",
+      "order_id": "order_test_0014",
+      "amount_paise": 449200,
+      "expected_utr": "UTR20260801001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0015",
+      "order_id": "order_test_0015",
+      "amount_paise": 74500,
+      "expected_utr": "UTR20260801001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0016",
+      "order_id": "order_test_0016",
+      "amount_paise": 306200,
+      "expected_utr": "UTR20260801001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0017",
+      "order_id": "order_test_0017",
+      "amount_paise": 66900,
+      "expected_utr": "UTR20260801001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0018",
+      "order_id": "order_test_0018",
+      "amount_paise": 247000,
+      "expected_utr": "UTR20260801001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0019",
+      "order_id": "order_test_0019",
+      "amount_paise": 92700,
+      "expected_utr": "UTR20260801001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0020",
+      "order_id": "order_test_0020",
+      "amount_paise": 308800,
+      "expected_utr": "UTR20260801001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0021",
+      "order_id": "order_test_0021",
+      "amount_paise": 181600,
+      "expected_utr": "UTR20260802001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0022",
+      "order_id": "order_test_0022",
+      "amount_paise": 68400,
+      "expected_utr": "UTR20260802001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0023",
+      "order_id": "order_test_0023",
+      "amount_paise": 447500,
+      "expected_utr": "UTR20260802001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0024",
+      "order_id": "order_test_0024",
+      "amount_paise": 320800,
+      "expected_utr": "UTR20260802001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0025",
+      "order_id": "order_test_0025",
+      "amount_paise": 466200,
+      "expected_utr": "UTR20260802001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0026",
+      "order_id": "order_test_0026",
+      "amount_paise": 55800,
+      "expected_utr": "UTR20260802001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0027",
+      "order_id": "order_test_0027",
+      "amount_paise": 268400,
+      "expected_utr": "UTR20260802001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0028",
+      "order_id": "order_test_0028",
+      "amount_paise": 182800,
+      "expected_utr": "UTR20260802001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0029",
+      "order_id": "order_test_0029",
+      "amount_paise": 267700,
+      "expected_utr": "UTR20260802001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0030",
+      "order_id": "order_test_0030",
+      "amount_paise": 334100,
+      "expected_utr": "UTR20260802001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0031",
+      "order_id": "order_test_0031",
+      "amount_paise": 124300,
+      "expected_utr": "UTR20260802001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0032",
+      "order_id": "order_test_0032",
+      "amount_paise": 451500,
+      "expected_utr": "UTR20260802001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0033",
+      "order_id": "order_test_0033",
+      "amount_paise": 360900,
+      "expected_utr": "UTR20260802001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0034",
+      "order_id": "order_test_0034",
+      "amount_paise": 189600,
+      "expected_utr": "UTR20260802001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0035",
+      "order_id": "order_test_0035",
+      "amount_paise": 84400,
+      "expected_utr": "UTR20260802001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0036",
+      "order_id": "order_test_0036",
+      "amount_paise": 135200,
+      "expected_utr": "UTR20260803001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "AMOUNT_WITH_FEE_EQUATION"
+    },
+    {
+      "payment_id": "pay_test_0037",
+      "order_id": "order_test_0037",
+      "amount_paise": 355800,
+      "expected_utr": "UTR20260803001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "AMOUNT_WITH_FEE_EQUATION"
+    },
+    {
+      "payment_id": "pay_test_0038",
+      "order_id": "order_test_0038",
+      "amount_paise": 322600,
+      "expected_utr": "UTR20260803001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "AMOUNT_WITH_FEE_EQUATION"
+    },
+    {
+      "payment_id": "pay_test_0039",
+      "order_id": "order_test_0039",
+      "amount_paise": 215900,
+      "expected_utr": "UTR20260803001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "AMOUNT_WITH_FEE_EQUATION"
+    },
+    {
+      "payment_id": "pay_test_0040",
+      "order_id": "order_test_0040",
+      "amount_paise": 103800,
+      "expected_utr": "UTR20260803001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "AMOUNT_WITH_FEE_EQUATION"
+    },
+    {
+      "payment_id": "pay_test_0041",
+      "order_id": "order_test_0041",
+      "amount_paise": 288600,
+      "expected_utr": "UTR20260804001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "EXCEPTION",
+      "expected_reason_code": "PARTIAL_SETTLEMENT",
+      "expected_match_method": null
+    },
+    {
+      "payment_id": "pay_test_0042",
+      "order_id": "order_test_0042",
+      "amount_paise": 139500,
+      "expected_utr": "UTR20260804001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "EXCEPTION",
+      "expected_reason_code": "PARTIAL_SETTLEMENT",
+      "expected_match_method": null
+    },
+    {
+      "payment_id": "pay_test_0043",
+      "order_id": "order_test_0043",
+      "amount_paise": 225700,
+      "expected_utr": "UTR20260804001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "EXCEPTION",
+      "expected_reason_code": "PARTIAL_SETTLEMENT",
+      "expected_match_method": null
+    },
+    {
+      "payment_id": "pay_test_0044",
+      "order_id": "order_test_0044",
+      "amount_paise": 425800,
+      "expected_utr": "UTR20260805001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "EXCEPTION",
+      "expected_reason_code": "DUPLICATE_UTR",
+      "expected_match_method": null
+    },
+    {
+      "payment_id": "pay_test_0045",
+      "order_id": "order_test_0045",
+      "amount_paise": 254400,
+      "expected_utr": "UTR20260805001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "EXCEPTION",
+      "expected_reason_code": "DUPLICATE_UTR",
+      "expected_match_method": null
+    },
+    {
+      "payment_id": "pay_test_0046",
+      "order_id": "order_test_0046",
+      "amount_paise": 135200,
+      "expected_utr": "UTR20260806001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "EXCEPTION",
+      "expected_reason_code": "MISSING_BANK_ENTRY",
+      "expected_match_method": null
+    },
+    {
+      "payment_id": "pay_test_0047",
+      "order_id": "order_test_0047",
+      "amount_paise": 451800,
+      "expected_utr": "UTR20260806001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "EXCEPTION",
+      "expected_reason_code": "MISSING_BANK_ENTRY",
+      "expected_match_method": null
+    },
+    {
+      "payment_id": "pay_test_0048",
+      "order_id": "order_test_0048",
+      "amount_paise": 275500,
+      "expected_utr": "UTR20260807001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "EXCEPTION",
+      "expected_reason_code": "AMOUNT_MISMATCH",
+      "expected_match_method": null
+    },
+    {
+      "payment_id": "pay_test_0049",
+      "order_id": "order_test_0049",
+      "amount_paise": 307300,
+      "expected_utr": "UTR20260808001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    },
+    {
+      "payment_id": "pay_test_0050",
+      "order_id": "order_test_0050",
+      "amount_paise": 207300,
+      "expected_utr": "UTR20260808001",
+      "result_scope": "PAYMENT",
+      "expected_decision": "MATCH",
+      "expected_reason_code": null,
+      "expected_match_method": "EXACT_UTR"
+    }
+  ],
+  "orphan_expectations": [
+    {
+      "utr": "UTR_ORPHAN_99901",
+      "result_scope": "ORPHAN_BANK_ENTRY",
+      "expected_decision": "EXCEPTION",
+      "expected_reason_code": "MISSING_SETTLEMENT"
+    },
+    {
+      "utr": "UTR_ORPHAN_99902",
+      "result_scope": "ORPHAN_BANK_ENTRY",
+      "expected_decision": "EXCEPTION",
+      "expected_reason_code": "MISSING_SETTLEMENT"
+    }
+  ]
+}

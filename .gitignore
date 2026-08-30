@@ -1,0 +1,237 @@
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+*.env
+.env.*
+config.local.*
+secrets.json
+credentials.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+.ENV
+.env.venv
+
+# PyCharm
+.idea/
+*.iml
+*.iws
+.idea_modules/
+
+# VS Code
+.vscode/
+*.code-workspace
+.history/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+reconcile.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Logs
+*.log
+logs/
+log/
+*.log.*
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+coverage.xml
+*.cover
+*.py,cover
+.cache
+nosetests.xml
+test-results/
+junit/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Backup files
+*.bak
+*.backup
+*.swp
+*.swo
+*~
+.*.swp
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+.temp
+
+# Data files (if containing sensitive info)
+data/exports/
+data/backups/
+data/processed/
+*.csv
+!**/data/synthetic_*.csv
+*.xlsx
+*.xls
+
+# API keys and credentials
+*_key.json
+*_credentials.json
+*_secret.txt
+api_keys.txt
+tokens.txt
+
+# Alembic
+alembic/versions/__pycache__/
+
+# Node modules (if any JS/TS is added)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Distribution / packaging
+.Python
+pip-wheel-metadata/
+*.whl
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# OS generated files
+.Spotlight-V100
+.Trashes
+
+# Project specific
+reconcile-agent/reconcile.db
+reconcile-agent/data/backups/
+reconcile-agent/data/exports/
+
+# Non-important markdown files (exclude drafts and temporary notes)
+**/NOTES.md
+**/TODO.md
+**/SCRATCH.md
+**/DRAFT*.md
+**/WIP*.md
+**/*_NOTES.md
+**/*_TODO.md
+**/*_DRAFT.md
+**/TEST_NOTES.md
+**/REVIEW_NOTES.md
+
+# Internal verification and development documentation (not for users)
+reconcile-agent/FEATURES_VERIFICATION.md
+reconcile-agent/QUALITY_METADATA_OPTIONS.md
+reconcile-agent/TESTS_REORGANIZATION.md
+reconcile-agent/README_CONTENT_CHECKLIST.md
+reconcile-agent/GITIGNORE_UPDATE_SUMMARY.md
+reconcile-agent/INTEGRATION_TEST_RESULTS.md
+reconcile-agent/ADVERSARIAL_TEST_REVIEW_SUMMARY.md
+
+# CI/CD internal implementation documentation (developers can regenerate)
+CI_CD_IMPLEMENTATION_SUMMARY.md
+CI_CD_QUICK_REFERENCE.md
+verify_cicd_setup.ps1
+GITIGNORE_DOCUMENTATION_UPDATE.md
+
+# Keep essential user-facing documentation:
+# - README.md (project overview) ✓
+# - ARCHITECTURE.md (architecture details) ✓
+# - CONTRIBUTING.md (contribution guidelines) ✓
+# - CI_CD_SETUP_GUIDE.md (comprehensive CI/CD guide) ✓
+# - reconcile-agent/SETUP_GUIDE.md (app setup) ✓
+# - reconcile-agent/QUICKSTART.md (app quick start) ✓
+# - reconcile-agent/ADVERSARIAL_TEST_PRD.md (test documentation) ✓
+# - reconcile-agent/security_best_practices_report.md (security docs) ✓
+# - .github/workflows/README.md (workflow docs) ✓
+# - All files in references/ directories ✓
+# - All agent/skill documentation in .agents/ ✓

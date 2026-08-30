@@ -1,0 +1,139 @@
+name: Scheduled Tests & Maintenance
+
+on:
+  schedule:
+    # Run every day at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  scheduled-tests:
+    name: Nightly Full Test Suite
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        working-directory: ./reconcile-agent
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest-cov pytest-xdist pytest-timeout
+      
+      - name: Create test environment
+        working-directory: ./reconcile-agent
+        run: |
+          cat > .env << EOF
+          DATABASE_URL=sqlite+aiosqlite:///./test_reconcile.db
+          RAZORPAY_KEY_ID=rzp_test_mock_key
+          RAZORPAY_KEY_SECRET=mock_secret
+          RAZORPAY_WEBHOOK_SECRET=whsec_mock_webhook_secret
+          OPENROUTER_API_KEY=sk-or-mock-key
+          OPENROUTER_MODEL=openai/gpt-4o-mini
+          GEMINI_API_KEY=mock_gemini_key
+          GEMINI_MODEL=gemini-2.0-flash
+          API_KEY_ENABLED=false
+          USE_FIXTURES=1
+          EOF
+      
+      - name: Run database migrations
+        working-directory: ./reconcile-agent
+        run: |
+          alembic upgrade head
+      
+      - name: Run full test suite with parallelization
+        working-directory: ./reconcile-agent
+        run: |
+          pytest tests/ -v -n auto --timeout=300 --cov=app --cov-report=term
+      
+      - name: Test performance benchmarks
+        working-directory: ./reconcile-agent
+        run: |
+          echo "Running performance benchmarks..."
+          pytest tests/test_batch_e2e.py -v --durations=10
+      
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Scheduled tests failed - check test suite integrity"
+
+  dependency-audit:
+    name: Dependency Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Install audit tools
+        run: |
+          pip install safety pip-audit
+      
+      - name: Run safety check
+        working-directory: ./reconcile-agent
+        run: |
+          safety check --json --file requirements.txt || true
+      
+      - name: Run pip-audit
+        working-directory: ./reconcile-agent
+        run: |
+          pip-audit -r requirements.txt || true
+      
+      - name: Check for outdated packages
+        working-directory: ./reconcile-agent
+        run: |
+          pip install -r requirements.txt
+          pip list --outdated
+
+  database-migration-test:
+    name: Database Migration Verification
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        working-directory: ./reconcile-agent
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Test migration up
+        working-directory: ./reconcile-agent
+        run: |
+          alembic upgrade head
+      
+      - name: Test migration down
+        working-directory: ./reconcile-agent
+        run: |
+          alembic downgrade base
+      
+      - name: Test migration re-up
+        working-directory: ./reconcile-agent
+        run: |
+          alembic upgrade head
+      
+      - name: Verify database schema
+        working-directory: ./reconcile-agent
+        run: |
+          python -c "from app.db.database import engine; from sqlalchemy import inspect; insp = inspect(engine); print('Tables:', insp.get_table_names())"

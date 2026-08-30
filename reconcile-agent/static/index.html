@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reconciliation Agent — Live Demo Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="h-9 w-9 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20">
+          RA
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight">Reconciliation Agent</h1>
+          <p class="text-xs text-slate-400">Razorpay Payments ↔ Bank Statement ↔ Internal Ledger</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-3 text-sm">
+        <span id="webhookBadge" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20">
+          <span class="w-1.5 h-1.5 rounded-full bg-purple-400 mr-1.5"></span>
+          Webhook Push: Active
+        </span>
+        <span id="healthBadge" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
+          Service Online
+        </span>
+        <a href="/docs" target="_blank" class="px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-md border border-slate-700 transition">OpenAPI Docs</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-8 space-y-8">
+    <!-- Trigger Reconciliation Section -->
+    <section class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-800 pb-6 mb-6">
+        <div>
+          <h2 class="text-base font-semibold text-white">Trigger Batch Reconciliation</h2>
+          <p class="text-sm text-slate-400 mt-0.5">Upload bank statements and ledger records to run 3-way reconciliation against captured test-mode payments.</p>
+        </div>
+        <button id="runPreloadedBtn" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm rounded-lg shadow-lg shadow-blue-600/30 transition flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Run Seeded 50-Record Batch
+        </button>
+      </div>
+
+      <form id="uploadForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="border-2 border-dashed border-slate-800 hover:border-slate-700 rounded-lg p-5 bg-slate-950/50 transition">
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">1. Bank Statement CSV</label>
+          <input type="file" id="bankFile" accept=".csv" class="block w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-600/20 file:text-blue-400 hover:file:bg-blue-600/30 cursor-pointer" />
+          <p class="text-xs text-slate-500 mt-2">Required cols: <code class="text-slate-400">utr, amount_paise, value_date</code></p>
+        </div>
+
+        <div class="border-2 border-dashed border-slate-800 hover:border-slate-700 rounded-lg p-5 bg-slate-950/50 transition">
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">2. Internal Ledger CSV</label>
+          <input type="file" id="ledgerFile" accept=".csv" class="block w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-600/20 file:text-blue-400 hover:file:bg-blue-600/30 cursor-pointer" />
+          <p class="text-xs text-slate-500 mt-2">Required cols: <code class="text-slate-400">order_id, expected_amount_paise</code></p>
+        </div>
+
+        <div class="md:col-span-2 flex justify-end">
+          <button type="submit" id="submitUploadBtn" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-sm rounded-lg border border-slate-700 transition">
+            Run Custom Files
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Webhook Real-Time Stream Card (§12.4) -->
+    <section class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+        <div class="flex items-center gap-2">
+          <div class="w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse"></div>
+          <h3 class="text-sm font-semibold text-white">Razorpay Webhook Stream (§12.4 Near-Real-Time Mode)</h3>
+        </div>
+        <span id="webhookEventCount" class="text-xs text-slate-400 font-mono">0 events received</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-slate-950 p-4 rounded-lg border border-slate-800/80">
+          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Webhook Endpoint</div>
+          <div class="mt-1 text-xs text-purple-300 mono truncate">/api/v1/webhooks/razorpay</div>
+          <div class="mt-1 text-[11px] text-slate-500">HMAC-SHA256 authenticated</div>
+        </div>
+        <div class="bg-slate-950 p-4 rounded-lg border border-slate-800/80">
+          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Processed Events</div>
+          <div id="whProcessedCount" class="mt-1 text-base font-bold text-emerald-400 mono">0</div>
+          <div class="mt-1 text-[11px] text-slate-500">Idempotently ingested</div>
+        </div>
+        <div class="bg-slate-950 p-4 rounded-lg border border-slate-800/80">
+          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Auto Micro-Batch</div>
+          <div class="mt-1 text-base font-bold text-blue-400 mono">Threshold: 10</div>
+          <div class="mt-1 text-[11px] text-slate-500">Auto-triggers reconciliation</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Metrics Cards -->
+    <section id="metricsSection" class="hidden space-y-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl">
+          <div class="text-xs font-medium text-slate-400 uppercase tracking-wider">Record Match Rate</div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span id="metricMatchRate" class="text-3xl font-bold text-emerald-400">--%</span>
+            <span id="metricMatchCount" class="text-xs text-slate-500">(-- / --)</span>
+          </div>
+          <div class="mt-2 text-xs text-slate-400">Ground truth aligned match %</div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl">
+          <div class="text-xs font-medium text-slate-400 uppercase tracking-wider">Amount Coverage</div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span id="metricAmountCoverage" class="text-3xl font-bold text-blue-400">--%</span>
+          </div>
+          <div class="mt-2 text-xs text-slate-400">Reconciled payment value / Gross value</div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl">
+          <div class="text-xs font-medium text-slate-400 uppercase tracking-wider">Exception Count</div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span id="metricExceptions" class="text-3xl font-bold text-amber-400">--</span>
+            <span class="text-xs text-slate-500">flagged items</span>
+          </div>
+          <div class="mt-2 text-xs text-slate-400">Reason-coded for honest reporting</div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl">
+          <div class="text-xs font-medium text-slate-400 uppercase tracking-wider">Batch Status</div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span id="metricStatus" class="text-2xl font-bold text-white uppercase">--</span>
+          </div>
+          <div id="metricBatchId" class="mt-2 text-xs text-slate-500 mono truncate">Batch: --</div>
+        </div>
+      </div>
+
+      <!-- Breakdown pills -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl">
+          <h3 class="text-sm font-semibold text-slate-200 mb-3">Exceptions by Reason Code</h3>
+          <div id="reasonBreakdown" class="flex flex-wrap gap-2"></div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl">
+          <h3 class="text-sm font-semibold text-slate-200 mb-3">Matches by Resolution Method</h3>
+          <div id="methodBreakdown" class="flex flex-wrap gap-2"></div>
+        </div>
+      </div>
+
+      <!-- Settlement Q&A Layer (Stretch §12) -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-2 h-2 rounded-full bg-purple-400"></div>
+          <h3 class="text-sm font-semibold text-white">Settlement Q&A Assistant (RAG Layer)</h3>
+        </div>
+        <p class="text-xs text-slate-400 mb-4">Ask any financial question about this batch (e.g. "Why were there exceptions?", "Explain fee equation differences").</p>
+        <div class="flex gap-3">
+          <input type="text" id="qaInput" placeholder="e.g. Why did some payments have partial settlements?" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500" />
+          <button id="qaSubmitBtn" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-medium text-xs rounded-lg transition">Ask Assistant</button>
+        </div>
+        <div id="qaAnswerBox" class="hidden mt-4 p-4 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-300 whitespace-pre-line leading-relaxed"></div>
+      </div>
+
+      <!-- Tabs for Results Table -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+        <div class="border-b border-slate-800 px-6 pt-4 flex gap-6">
+          <button id="tabExceptions" class="pb-3 text-sm font-semibold border-b-2 border-amber-400 text-amber-400 transition">
+            Exceptions (<span id="tabExcCount">0</span>)
+          </button>
+          <button id="tabMatches" class="pb-3 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition">
+            Matches (<span id="tabMatchCount">0</span>)
+          </button>
+        </div>
+
+        <!-- Exceptions Table -->
+        <div id="exceptionsView" class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950/60 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+              <tr>
+                <th class="px-6 py-3">Result Scope</th>
+                <th class="px-6 py-3">Payment ID</th>
+                <th class="px-6 py-3">Reason Code</th>
+                <th class="px-6 py-3">Settlement / Bank UTR</th>
+                <th class="px-6 py-3">Order Ref</th>
+              </tr>
+            </thead>
+            <tbody id="exceptionsTbody" class="divide-y divide-slate-800/60 text-slate-300 mono"></tbody>
+          </table>
+        </div>
+
+        <!-- Matches Table -->
+        <div id="matchesView" class="hidden overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950/60 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+              <tr>
+                <th class="px-6 py-3">Payment ID</th>
+                <th class="px-6 py-3">Match Method</th>
+                <th class="px-6 py-3">Settlement UTR</th>
+                <th class="px-6 py-3">Order Ref</th>
+              </tr>
+            </thead>
+            <tbody id="matchesTbody" class="divide-y divide-slate-800/60 text-slate-300 mono"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let currentBatchId = null;
+
+    // Load initial webhook stats and poll periodically
+    async function updateWebhookStats() {
+      try {
+        const res = await fetch("/api/v1/webhooks/stats");
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById("webhookEventCount").innerText = `${data.total_events} events received`;
+          const proc = data.counts_by_status?.PROCESSED || 0;
+          document.getElementById("whProcessedCount").innerText = proc;
+        }
+      } catch (e) {
+        // silent fail on poll
+      }
+    }
+    updateWebhookStats();
+    setInterval(updateWebhookStats, 10000);
+
+    // Preloaded synthetic data button
+    document.getElementById("runPreloadedBtn").addEventListener("click", async () => {
+      const btn = document.getElementById("runPreloadedBtn");
+      btn.disabled = true;
+      btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg> Reconciling 50 Records...`;
+
+      try {
+        const bankRes = await fetch("/data/synthetic_bank_statement.csv");
+        const bankBlob = await bankRes.blob();
+        const ledgerRes = await fetch("/data/synthetic_ledger.csv");
+        const ledgerBlob = await ledgerRes.blob();
+
+        const formData = new FormData();
+        formData.append("bank_csv", bankBlob, "bank.csv");
+        formData.append("ledger_csv", ledgerBlob, "ledger.csv");
+
+        const resp = await fetch("/api/v1/batches", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        renderBatchSummary(data);
+      } catch (err) {
+        alert("Batch run failed: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Run Seeded 50-Record Batch`;
+      }
+    });
+
+    // Custom upload form
+    document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const bankFile = document.getElementById("bankFile").files[0];
+      const ledgerFile = document.getElementById("ledgerFile").files[0];
+      if (!bankFile || !ledgerFile) {
+        alert("Please select both bank and ledger CSV files.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("bank_csv", bankFile);
+      formData.append("ledger_csv", ledgerFile);
+
+      try {
+        const resp = await fetch("/api/v1/batches", { method: "POST", body: formData });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        renderBatchSummary(data);
+      } catch (err) {
+        alert("Upload run failed: " + err.message);
+      }
+    });
+
+    // Q&A handler
+    document.getElementById("qaSubmitBtn").addEventListener("click", async () => {
+      const qInput = document.getElementById("qaInput");
+      const question = qInput.value.trim();
+      if (!question) return;
+
+      const answerBox = document.getElementById("qaAnswerBox");
+      answerBox.classList.remove("hidden");
+      answerBox.innerText = "Analyzing batch records and generating answer...";
+
+      try {
+        const resp = await fetch("/api/v1/qa", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question: question, batch_id: currentBatchId }),
+        });
+        const data = await resp.json();
+        answerBox.innerText = data.answer || "No answer returned.";
+      } catch (err) {
+        answerBox.innerText = "Error answering question: " + err.message;
+      }
+    });
+
+    async function renderBatchSummary(data) {
+      currentBatchId = data.batch_id;
+      document.getElementById("metricsSection").classList.remove("hidden");
+
+      document.getElementById("metricMatchRate").innerText = `${(data.record_match_rate * 100).toFixed(1)}%`;
+      document.getElementById("metricMatchCount").innerText = `(${data.matched_records} / ${data.total_records})`;
+      document.getElementById("metricAmountCoverage").innerText = `${(data.amount_coverage * 100).toFixed(1)}%`;
+      document.getElementById("metricExceptions").innerText = data.exception_count;
+      document.getElementById("metricStatus").innerText = data.status;
+      document.getElementById("metricBatchId").innerText = `Batch ID: ${data.batch_id}`;
+
+      // Reason code badges
+      const rContainer = document.getElementById("reasonBreakdown");
+      rContainer.innerHTML = "";
+      for (const [code, count] of Object.entries(data.reason_code_breakdown || {})) {
+        const pill = document.createElement("span");
+        pill.className = "px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/20";
+        pill.innerText = `${code}: ${count}`;
+        rContainer.appendChild(pill);
+      }
+
+      // Method badges
+      const mContainer = document.getElementById("methodBreakdown");
+      mContainer.innerHTML = "";
+      for (const [method, count] of Object.entries(data.match_method_breakdown || {})) {
+        const pill = document.createElement("span");
+        pill.className = "px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-500/10 text-blue-300 border border-blue-500/20";
+        pill.innerText = `${method}: ${count}`;
+        mContainer.appendChild(pill);
+      }
+
+      document.getElementById("tabExcCount").innerText = data.exception_count;
+      document.getElementById("tabMatchCount").innerText = data.matched_records;
+
+      // Load tables
+      await loadExceptions(data.batch_id);
+      await loadMatches(data.batch_id);
+    }
+
+    async function loadExceptions(batchId) {
+      const resp = await fetch(`/api/v1/batches/${batchId}/exceptions?limit=100`);
+      const data = await resp.json();
+      const tbody = document.getElementById("exceptionsTbody");
+      tbody.innerHTML = "";
+
+      data.data.forEach(item => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-800/40 transition";
+
+        // Scope column
+        const tdScope = document.createElement("td");
+        tdScope.className = "px-6 py-3";
+        const spanScope = document.createElement("span");
+        spanScope.className = `px-2 py-0.5 rounded text-[11px] font-semibold ${item.result_scope === 'ORPHAN_BANK_ENTRY' ? 'bg-purple-500/20 text-purple-300' : 'bg-slate-800 text-slate-300'}`;
+        spanScope.textContent = item.result_scope;
+        tdScope.appendChild(spanScope);
+        tr.appendChild(tdScope);
+
+        // Payment ID column (safe textContent to prevent XSS)
+        const tdPay = document.createElement("td");
+        tdPay.className = "px-6 py-3 text-slate-300";
+        if (item.payment_id) {
+          tdPay.textContent = item.payment_id;
+        } else {
+          const spanNull = document.createElement("span");
+          spanNull.className = "text-slate-600";
+          spanNull.textContent = "null";
+          tdPay.appendChild(spanNull);
+        }
+        tr.appendChild(tdPay);
+
+        // Reason code column
+        const tdReason = document.createElement("td");
+        tdReason.className = "px-6 py-3";
+        const spanReason = document.createElement("span");
+        spanReason.className = "text-amber-400 font-semibold";
+        spanReason.textContent = item.reason_code;
+        tdReason.appendChild(spanReason);
+        tr.appendChild(tdReason);
+
+        // Settlement / Bank UTR column
+        const tdUtr = document.createElement("td");
+        tdUtr.className = "px-6 py-3 text-slate-400";
+        tdUtr.textContent = item.settlement_utr || item.bank_entry_utr || "--";
+        tr.appendChild(tdUtr);
+
+        // Order Ref column
+        const tdOrder = document.createElement("td");
+        tdOrder.className = "px-6 py-3 text-slate-400";
+        tdOrder.textContent = item.ledger_order_id || "--";
+        tr.appendChild(tdOrder);
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function loadMatches(batchId) {
+      const resp = await fetch(`/api/v1/batches/${batchId}/matches?limit=100`);
+      const data = await resp.json();
+      const tbody = document.getElementById("matchesTbody");
+      tbody.innerHTML = "";
+
+      data.data.forEach(item => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-800/40 transition";
+
+        // Payment ID column (safe textContent to prevent XSS)
+        const tdPay = document.createElement("td");
+        tdPay.className = "px-6 py-3 text-emerald-400 font-medium";
+        tdPay.textContent = item.payment_id;
+        tr.appendChild(tdPay);
+
+        // Match method column
+        const tdMethod = document.createElement("td");
+        tdMethod.className = "px-6 py-3";
+        const spanMethod = document.createElement("span");
+        spanMethod.className = "px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20";
+        spanMethod.textContent = item.match_method;
+        tdMethod.appendChild(spanMethod);
+        tr.appendChild(tdMethod);
+
+        // Settlement UTR column
+        const tdUtr = document.createElement("td");
+        tdUtr.className = "px-6 py-3 text-slate-400";
+        tdUtr.textContent = item.settlement_utr || "--";
+        tr.appendChild(tdUtr);
+
+        // Order Ref column
+        const tdOrder = document.createElement("td");
+        tdOrder.className = "px-6 py-3 text-slate-400";
+        tdOrder.textContent = item.ledger_order_id || "--";
+        tr.appendChild(tdOrder);
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Tabs switching
+    const tabExc = document.getElementById("tabExceptions");
+    const tabMatch = document.getElementById("tabMatches");
+    const viewExc = document.getElementById("exceptionsView");
+    const viewMatch = document.getElementById("matchesView");
+
+    tabExc.addEventListener("click", () => {
+      tabExc.className = "pb-3 text-sm font-semibold border-b-2 border-amber-400 text-amber-400 transition";
+      tabMatch.className = "pb-3 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition";
+      viewExc.classList.remove("hidden");
+      viewMatch.classList.add("hidden");
+    });
+
+    tabMatch.addEventListener("click", () => {
+      tabMatch.className = "pb-3 text-sm font-semibold border-b-2 border-emerald-400 text-emerald-400 transition";
+      tabExc.className = "pb-3 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition";
+      viewMatch.classList.remove("hidden");
+      viewExc.classList.add("hidden");
+    });
+  </script>
+</body>
+</html>

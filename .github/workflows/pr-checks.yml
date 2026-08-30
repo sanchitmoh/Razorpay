@@ -1,0 +1,184 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  pr-validation:
+    name: PR Validation
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Check PR title format
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          # Check if PR title follows conventional commit format
+          if [[ ! "$PR_TITLE" =~ ^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+ ]]; then
+            echo "::warning::PR title should follow conventional commit format"
+            echo "::warning::Examples: feat: add new feature, fix(auth): resolve login issue"
+          fi
+      
+      - name: Check for large files
+        run: |
+          # Check for files larger than 1MB
+          large_files=$(find reconcile-agent -type f -size +1M -not -path "*/\.*" || true)
+          if [ -n "$large_files" ]; then
+            echo "::warning::Large files detected:"
+            echo "$large_files"
+          fi
+      
+      - name: Check for secrets
+        run: |
+          # Basic check for potential secrets
+          if git diff origin/${{ github.base_ref }}...HEAD | grep -iE "(api_key|api_secret|password|token|secret_key)" | grep -v "mock\|test\|example"; then
+            echo "::error::Potential secrets detected in diff - please review"
+            exit 1
+          fi
+      
+      - name: PR size check
+        run: |
+          changes=$(git diff --stat origin/${{ github.base_ref }}...HEAD | tail -1)
+          echo "Changes: $changes"
+          
+          # Extract number of files and lines changed
+          files_changed=$(echo "$changes" | awk '{print $1}')
+          
+          if [ "$files_changed" -gt 50 ]; then
+            echo "::warning::This PR changes $files_changed files - consider splitting into smaller PRs"
+          fi
+
+  test-on-pr:
+    name: Quick Tests on PR
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        working-directory: ./reconcile-agent
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest-cov pytest-xdist
+      
+      - name: Create test environment
+        working-directory: ./reconcile-agent
+        run: |
+          cat > .env << EOF
+          DATABASE_URL=sqlite+aiosqlite:///./test_reconcile.db
+          RAZORPAY_KEY_ID=rzp_test_mock_key
+          RAZORPAY_KEY_SECRET=mock_secret
+          RAZORPAY_WEBHOOK_SECRET=whsec_mock_webhook_secret
+          OPENROUTER_API_KEY=sk-or-mock-key
+          OPENROUTER_MODEL=openai/gpt-4o-mini
+          GEMINI_API_KEY=mock_gemini_key
+          GEMINI_MODEL=gemini-2.0-flash
+          API_KEY_ENABLED=false
+          USE_FIXTURES=1
+          EOF
+      
+      - name: Run database migrations
+        working-directory: ./reconcile-agent
+        run: |
+          alembic upgrade head
+      
+      - name: Run quick test suite
+        working-directory: ./reconcile-agent
+        run: |
+          # Run tests in parallel with faster execution
+          pytest tests/ -v -n auto --maxfail=5 -x
+      
+      - name: Comment test results
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('Test Results')
+            );
+            
+            const output = `### Test Results
+            
+            - ✅ Tests completed for commit ${context.sha.substring(0, 7)}
+            - 📊 Check the workflow run for detailed results
+            - 🔗 [View full test report](${context.payload.repository.html_url}/actions/runs/${context.runId})
+            `;
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: output
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: output
+              });
+            }
+
+  code-review:
+    name: Automated Code Review
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Install review tools
+        run: |
+          pip install ruff radon complexity-analyzer
+      
+      - name: Run code complexity analysis
+        working-directory: ./reconcile-agent
+        run: |
+          # Calculate cyclomatic complexity
+          radon cc app/ -a -nb || true
+      
+      - name: Run maintainability index
+        working-directory: ./reconcile-agent
+        run: |
+          # Calculate maintainability index
+          radon mi app/ -nb || true
+      
+      - name: Check code metrics
+        working-directory: ./reconcile-agent
+        run: |
+          # Check for files with high complexity
+          radon cc app/ -nc -j > complexity.json || true
+          if [ -f complexity.json ]; then
+            echo "Complexity analysis completed"
+          fi

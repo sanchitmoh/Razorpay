@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  # ---------------------------------------------------------------------------
+  # Reconciliation Agent API & Dashboard Service
+  # ---------------------------------------------------------------------------
+  reconcile-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: reconcile-agent
+    ports:
+      - "8000:8000"
+    environment:
+      # Database: defaults to SQLite inside container, or set to postgresql+asyncpg://reconcile_user:reconcile_password@postgres:5432/reconcile
+      - DATABASE_URL=${DATABASE_URL:-sqlite+aiosqlite:///./reconcile.db}
+      
+      # Razorpay Gateway Credentials
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET}
+      - WEBHOOK_MICRO_BATCH_THRESHOLD=${WEBHOOK_MICRO_BATCH_THRESHOLD:-10}
+      - WEBHOOK_MICRO_BATCH_INTERVAL_SECONDS=${WEBHOOK_MICRO_BATCH_INTERVAL_SECONDS:-300}
+      
+      # LLM Providers (OpenRouter primary, Gemini fallback)
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-openai/gpt-4o-mini}
+      - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.0-flash}
+      - LLM_TIMEOUT_SECONDS=${LLM_TIMEOUT_SECONDS:-10}
+      - LLM_MAX_RETRIES=${LLM_MAX_RETRIES:-1}
+      
+      # Security, Rate Limiting & Input Bounds
+      - API_KEY=${API_KEY}
+      - API_KEY_ENABLED=${API_KEY_ENABLED:-false}
+      - RATE_LIMIT_CAPACITY=${RATE_LIMIT_CAPACITY:-60}
+      - RATE_LIMIT_REFILL_RATE=${RATE_LIMIT_REFILL_RATE:-1.0}
+      - MAX_UPLOAD_SIZE_BYTES=${MAX_UPLOAD_SIZE_BYTES:-104857600}
+      - QA_MAX_QUESTION_LENGTH=${QA_MAX_QUESTION_LENGTH:-4000}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-*}
+      
+      # Redis Rate Limiting (Provider-Agnostic)
+      # Can connect to the included 'redis' container: redis://redis:6379/0, or any external Redis/Upstash
+      - REDIS_URL=${REDIS_URL:-}
+      - UPSTASH_REDIS_REST_URL=${UPSTASH_REDIS_REST_URL:-}
+      - UPSTASH_REDIS_REST_TOKEN=${UPSTASH_REDIS_REST_TOKEN:-}
+      
+      # Testing / Demo mode
+      - USE_FIXTURES=${USE_FIXTURES:-0}
+    volumes:
+      - ./data:/app/data
+      - ./reconcile.db:/app/reconcile.db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database (Optional - enable with --profile postgres)
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: reconcile-postgres
+    environment:
+      - POSTGRES_DB=reconcile
+      - POSTGRES_USER=reconcile_user
+      - POSTGRES_PASSWORD=reconcile_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reconcile_user -d reconcile"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - postgres
+
+  # ---------------------------------------------------------------------------
+  # Redis for Distributed Rate Limiting (Optional - enable with --profile redis)
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: reconcile-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - redis
+
+volumes:
+  postgres_data:
+  redis_data:
