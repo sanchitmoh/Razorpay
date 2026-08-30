@@ -15,4 +15,5 @@ redis>=5.0
 respx>=0.21
 pytest>=8.2
 pytest-asyncio>=0.23
+pytest-cov>=5.0
 google-genai>=1.0

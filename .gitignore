@@ -1,12 +1,20 @@
-# Environment variables and secrets
+# Environment variables and secrets (exclude secrets, allow example templates)
 .env
 .env.local
 .env.*.local
 *.env
 .env.*
+!.env.example
+!*.env.example
+!**/.env.example
 config.local.*
 secrets.json
 credentials.json
+
+# Agent directory (internal local configurations)
+.agents/
+/.agents/
+**/.agents/
 
 # Python
 __pycache__/
@@ -234,4 +242,3 @@ GITIGNORE_DOCUMENTATION_UPDATE.md
 # - reconcile-agent/security_best_practices_report.md (security docs) ✓
 # - .github/workflows/README.md (workflow docs) ✓
 # - All files in references/ directories ✓
-# - All agent/skill documentation in .agents/ ✓
