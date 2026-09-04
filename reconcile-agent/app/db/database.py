@@ -16,10 +16,27 @@ class Base(DeclarativeBase):
     pass
 
 
+# SQLite-specific configuration for better concurrency handling
+engine_kwargs = {
+    "echo": False,
+    "future": True,
+}
+
+# Add SQLite-specific settings to reduce database lock errors
+if settings.database_url.startswith("sqlite"):
+    engine_kwargs.update({
+        "connect_args": {
+            "timeout": 30,  # Wait up to 30 seconds for locks
+            "check_same_thread": False,  # Allow usage across threads
+        },
+        "pool_pre_ping": True,  # Verify connections before using
+        "pool_size": 5,  # Limit connection pool size
+        "max_overflow": 10,  # Allow temporary overflow connections
+    })
+
 engine = create_async_engine(
     settings.database_url,
-    echo=False,
-    future=True,
+    **engine_kwargs,
 )
 
 async_session_factory = async_sessionmaker(

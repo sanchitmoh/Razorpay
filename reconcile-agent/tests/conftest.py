@@ -21,6 +21,7 @@ from app.models.reconciliation_result import ReconciliationResult
 
 # Enable test fixtures for test runs (§10.1)
 os.environ["USE_FIXTURES"] = "1"
+settings.use_fixtures = "1"
 
 # Use isolated SQLite in-memory for testing (§10.1)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"

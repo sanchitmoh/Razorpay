@@ -56,7 +56,8 @@ def make_payment_captured_payload(payment_id: str, order_id: str, amount_paise: 
 @pytest.mark.asyncio
 async def test_webhook_secret_unset_returns_503(client: AsyncClient, monkeypatch):
     """Verify that if RAZORPAY_WEBHOOK_SECRET is unset, requests are rejected with 503 (fail closed, VULN-001)."""
-    monkeypatch.setattr(settings, "razorpay_webhook_secret", "")
+    # Patch settings in the webhooks module where it's actually used
+    monkeypatch.setattr("app.api.routes.webhooks.settings.razorpay_webhook_secret", "")
 
     payload = make_payment_captured_payload("pay_test_unset", "order_test_unset", 10000)
     response = await client.post(
@@ -71,7 +72,7 @@ async def test_webhook_secret_unset_returns_503(client: AsyncClient, monkeypatch
 @pytest.mark.asyncio
 async def test_webhook_valid_signature_accepted(client: AsyncClient, db_session: AsyncSession, monkeypatch):
     """Verify that a valid HMAC signature returns 200 and logs PROCESSED event."""
-    monkeypatch.setattr(settings, "razorpay_webhook_secret", TEST_SECRET)
+    monkeypatch.setattr("app.api.routes.webhooks.settings.razorpay_webhook_secret", TEST_SECRET)
 
     event_id = f"evt_valid_{uuid.uuid4().hex[:8]}"
     pay_id = f"pay_wh_{uuid.uuid4().hex[:8]}"
@@ -106,7 +107,7 @@ async def test_webhook_valid_signature_accepted(client: AsyncClient, db_session:
 @pytest.mark.asyncio
 async def test_webhook_invalid_signature_rejected(client: AsyncClient, db_session: AsyncSession, monkeypatch):
     """Verify that an invalid HMAC signature returns 401 and writes nothing to DB."""
-    monkeypatch.setattr(settings, "razorpay_webhook_secret", TEST_SECRET)
+    monkeypatch.setattr("app.api.routes.webhooks.settings.razorpay_webhook_secret", TEST_SECRET)
 
     event_id = f"evt_invalid_{uuid.uuid4().hex[:8]}"
     pay_id = f"pay_inv_{uuid.uuid4().hex[:8]}"
@@ -132,7 +133,7 @@ async def test_webhook_invalid_signature_rejected(client: AsyncClient, db_sessio
 @pytest.mark.asyncio
 async def test_webhook_duplicate_event_idempotent(client: AsyncClient, db_session: AsyncSession, monkeypatch):
     """Verify sending same razorpay_event_id twice logs SKIPPED_DUPLICATE and does not duplicate payments."""
-    monkeypatch.setattr(settings, "razorpay_webhook_secret", TEST_SECRET)
+    monkeypatch.setattr("app.api.routes.webhooks.settings.razorpay_webhook_secret", TEST_SECRET)
 
     event_id = f"evt_dup_{uuid.uuid4().hex[:8]}"
     pay_id = f"pay_dup_{uuid.uuid4().hex[:8]}"
@@ -161,7 +162,7 @@ async def test_webhook_duplicate_event_idempotent(client: AsyncClient, db_sessio
 @pytest.mark.asyncio
 async def test_webhook_unhandled_event_type_logged(client: AsyncClient, db_session: AsyncSession, monkeypatch):
     """Verify non-captured events (e.g. payment.failed) are logged as SKIPPED_UNHANDLED without creating payments."""
-    monkeypatch.setattr(settings, "razorpay_webhook_secret", TEST_SECRET)
+    monkeypatch.setattr("app.api.routes.webhooks.settings.razorpay_webhook_secret", TEST_SECRET)
 
     event_id = f"evt_unhandled_{uuid.uuid4().hex[:8]}"
     payload = {
@@ -218,8 +219,8 @@ async def test_webhook_payment_upsert_matches_ingestion():
 @pytest.mark.asyncio
 async def test_webhook_below_threshold_no_batch(client: AsyncClient, db_session: AsyncSession, monkeypatch):
     """Verify that if unreconciled payment count is below threshold, no micro-batch is triggered."""
-    monkeypatch.setattr(settings, "razorpay_webhook_secret", TEST_SECRET)
-    monkeypatch.setattr(settings, "webhook_micro_batch_threshold", 5)
+    monkeypatch.setattr("app.api.routes.webhooks.settings.razorpay_webhook_secret", TEST_SECRET)
+    monkeypatch.setattr("app.agents.webhook_processor.settings.webhook_micro_batch_threshold", 5)
 
     # Send 2 events (< 5)
     for i in range(2):
@@ -240,8 +241,8 @@ async def test_webhook_below_threshold_no_batch(client: AsyncClient, db_session:
 @pytest.mark.asyncio
 async def test_webhook_micro_batch_triggers_at_threshold(client: AsyncClient, db_session: AsyncSession, monkeypatch):
     """Verify that reaching webhook_micro_batch_threshold triggers automatic micro-batch reconciliation."""
-    monkeypatch.setattr(settings, "razorpay_webhook_secret", TEST_SECRET)
-    monkeypatch.setattr(settings, "webhook_micro_batch_threshold", 3)
+    monkeypatch.setattr("app.api.routes.webhooks.settings.razorpay_webhook_secret", TEST_SECRET)
+    monkeypatch.setattr("app.agents.webhook_processor.settings.webhook_micro_batch_threshold", 3)
 
     # Send 3 payments -> 3rd triggers micro-batch
     last_resp = None

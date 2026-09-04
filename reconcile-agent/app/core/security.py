@@ -102,6 +102,11 @@ class TokenBucketRateLimiter:
         self._memory_store: dict[str, dict[str, float]] = {}
         self._redis_client: Any = None
 
+    def reset(self) -> None:
+        """Reset in-memory state and clear client for clean testing."""
+        self._memory_store.clear()
+        self._redis_client = None
+
     def _client_key(self, request: Request) -> str:
         if request.client:
             return request.client.host
@@ -147,27 +152,37 @@ class TokenBucketRateLimiter:
         return bool(res == 1), 0.0
 
     async def _check_upstash(self, key: str, requested: int = 1) -> tuple[bool, float]:
-        """Query Upstash Redis REST API via Lua script."""
-        url = f"{settings.upstash_redis_rest_url.rstrip('/')}/eval"
+        """Query Upstash Redis REST API via Lua script.
+        
+        Upstash REST API expects commands as JSON arrays following Redis protocol:
+        ["EVAL", script, numkeys, key1, ..., arg1, ...]
+        
+        Source: https://upstash.com/blog/lua-scripting-on-upstash-redis-atomic-operations-over-http
+        """
+        url = settings.upstash_redis_rest_url.rstrip('/')
         headers = {
             "Authorization": f"Bearer {settings.upstash_redis_rest_token}",
             "Content-Type": "application/json",
         }
         now = time.time()
-        payload = {
-            "script": TOKEN_BUCKET_LUA_SCRIPT,
-            "keys": [f"rate_limit:{key}"],
-            "args": [
-                str(self.capacity),
-                str(self.refill_rate),
-                str(now),
-                str(requested),
-            ],
-        }
+        
+        # Upstash REST API format: ["EVAL", script, numkeys, key1, ..., arg1, ...]
+        payload = [
+            "EVAL",
+            TOKEN_BUCKET_LUA_SCRIPT,
+            "1",  # numkeys
+            f"rate_limit:{key}",  # KEYS[1]
+            str(self.capacity),    # ARGV[1]
+            str(self.refill_rate), # ARGV[2]
+            str(now),              # ARGV[3]
+            str(requested),        # ARGV[4]
+        ]
+        
         async with httpx.AsyncClient(timeout=2.0) as client:
             resp = await client.post(url, headers=headers, json=payload)
             if resp.status_code == 200:
-                result = resp.json().get("result", [1, self.capacity])
+                data = resp.json()
+                result = data.get("result", [1, self.capacity])
                 allowed = bool(result[0] == 1)
                 remaining = float(result[1]) if len(result) > 1 else 0.0
                 return allowed, remaining

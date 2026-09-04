@@ -231,6 +231,31 @@ CI_CD_QUICK_REFERENCE.md
 verify_cicd_setup.ps1
 GITIGNORE_DOCUMENTATION_UPDATE.md
 
+# Demo and presentation documentation (internal development artifacts)
+CLI_QUICK_START.md
+DEMO_PACKAGE_README.md
+DEMO_QUICK_REFERENCE.md
+DEMO_RECORDING_STEPS.md
+DEMO_VIDEO_SCRIPT.md
+DEMO_VISUAL_ASSETS.md
+FINAL_SUMMARY.md
+HOW_TO_CREATE_PAYMENTS.md
+HOW_TO_USE_FIXTURE_CSVS.md
+PAYMENT_CREATION_QUICK_GUIDE.md
+QUICK_START_GUIDE.md
+RAZORPAY_CLI_GUIDE.md
+SANITIZATION_IMPLEMENTED.md
+START_HERE_DEMO.md
+TOUGHEST_QA_QUESTIONS.md
+
+# PowerShell scripts (development/testing scripts)
+*.ps1
+!**/workflows/*.ps1
+
+# Claude AI session files
+.claude/
+*.claude
+
 # Keep essential user-facing documentation:
 # - README.md (project overview) ✓
 # - ARCHITECTURE.md (architecture details) ✓
