@@ -92,6 +92,63 @@ Open **[http://localhost:8000/](http://localhost:8000/)** to access the interact
 
 ---
 
+## ⚠️ **CRITICAL: Test Mode vs Production Mode**
+
+The system operates in two modes controlled by the `USE_FIXTURES` environment variable:
+
+### **🧪 Test/Demo Mode (Recommended for First Run):**
+
+**Set in `.env` file:**
+```env
+USE_FIXTURES=1  # Uses 50-record synthetic test fixture
+```
+
+**What this does:**
+- Uses pre-generated 50 payment records with known ground truth
+- Matches perfectly with `data/synthetic_bank_statement.csv` and `data/synthetic_ledger.csv`
+- Gives instant ~85% match rate demo without needing real Razorpay payments
+- **Perfect for testing, demos, and development**
+
+**To use:**
+1. Set `USE_FIXTURES=1` in `.env`
+2. Restart server: `uvicorn app.main:app --reload`
+3. Open http://localhost:8000
+4. Click **"Run Seeded 50-Record Batch"** button
+5. See instant reconciliation results!
+
+---
+
+### **🏭 Production Mode (Real Razorpay Data):**
+
+**Set in `.env` file:**
+```env
+USE_FIXTURES=0  # Fetches real captured payments from Razorpay
+```
+
+**What this does:**
+- Fetches actual captured payments from your Razorpay test account via API
+- Requires real payments to exist in your account
+- CSV files must match your actual payment dates and amounts
+
+**Prerequisites:**
+1. Have captured payments in your Razorpay dashboard
+2. Payment dates must align with your CSV data
+
+**To use:**
+1. Set `USE_FIXTURES=0` in `.env`
+2. Capture payments via Razorpay dashboard (use test card: `4111 1111 1111 1111`)
+3. Generate matching CSVs: `python scripts/fetch_and_sync_payments.py`
+4. Upload generated CSVs via dashboard OR use seeded batch
+
+**⚠️ Common Issue:** If you see **0% match rate** in production mode, it means:
+- ❌ No captured payments in your Razorpay account, OR
+- ❌ CSV file dates don't match your payment dates, OR
+- ❌ CSV amounts don't align with actual payments
+
+**Solution:** Either switch to `USE_FIXTURES=1` for testing, or ensure you have real captured payments that match your CSV data.
+
+---
+
 ## 5. Environment Configuration
 
 Create a `.env` file in the `reconcile-agent/` directory:
@@ -131,8 +188,10 @@ UPSTASH_REDIS_REST_URL=https://...upstash.io
 UPSTASH_REDIS_REST_TOKEN=...
 # Option 3: Leave blank for automatic high-performance in-memory Token Bucket fallback
 
-# --- Testing (optional) ---
-USE_FIXTURES=0  # Set to 1 for offline fixture testing
+# --- Testing/Demo Mode ---
+USE_FIXTURES=1  # 0 = production (real Razorpay data), 1 = test mode (synthetic fixtures)
+                # ⚠️ IMPORTANT: Set to 1 for demo/testing, 0 for real Razorpay payments
+                # NEVER set to 1 in production!
 ```
 
 ---
@@ -302,6 +361,19 @@ pytest tests/ --cov=app --cov-report=html
 
 ## 12. Troubleshooting
 
+### ⚠️ Getting 0% Match Rate?
+
+**Problem:** Dashboard shows 0% reconciliation with all exceptions.
+
+**Cause:** You're in production mode (`USE_FIXTURES=0`) but don't have matching payment data.
+
+**Solution:**
+1. **For Testing/Demo:** Set `USE_FIXTURES=1` in `.env`, restart server, click "Run Seeded 50-Record Batch"
+2. **For Real Data:** 
+   - Ensure you have captured payments in Razorpay dashboard
+   - Run `python scripts/fetch_and_sync_payments.py` to generate matching CSVs
+   - Verify payment dates match your CSV dates
+
 ### No captured payments in Razorpay
 Visit https://dashboard.razorpay.com/app/payments and create test payments, then re-run the seeder script.
 
@@ -319,6 +391,14 @@ Check CSV format, encoding (UTF-8), and ensure no BOM markers.
 ### Tests failing
 ```bash
 pytest tests/ -v -s  # Run with verbose output
+```
+
+### Server won't start
+Check if port 8000 is already in use:
+```powershell
+# Windows
+netstat -ano | findstr :8000
+# Kill process if needed: taskkill /PID <process_id> /F
 ```
 
 ---

@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     upstash_redis_rest_url: str = ""           # Optional Upstash Redis REST URL (HTTP/Serverless)
     upstash_redis_rest_token: str = ""         # Optional Upstash Redis REST Token
     cors_allowed_origins: str = "*"            # Comma-separated list of allowed origins or "*"
+    use_fixtures: str = "0"                    # Testing/Demo mode: "1" = use synthetic fixtures, "0" = real Razorpay data
 
     @property
     def cors_origins_list(self) -> list[str]:
