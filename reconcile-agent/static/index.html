@@ -230,32 +230,27 @@
     updateWebhookStats();
     setInterval(updateWebhookStats, 10000);
 
-    // Preloaded synthetic data button
+    // Preloaded synthetic data button - calls /api/v1/batches/seeded
     document.getElementById("runPreloadedBtn").addEventListener("click", async () => {
       const btn = document.getElementById("runPreloadedBtn");
       btn.disabled = true;
       btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg> Reconciling 50 Records...`;
 
       try {
-        const bankRes = await fetch("/data/synthetic_bank_statement.csv");
-        const bankBlob = await bankRes.blob();
-        const ledgerRes = await fetch("/data/synthetic_ledger.csv");
-        const ledgerBlob = await ledgerRes.blob();
-
-        const formData = new FormData();
-        formData.append("bank_csv", bankBlob, "bank.csv");
-        formData.append("ledger_csv", ledgerBlob, "ledger.csv");
-
-        const resp = await fetch("/api/v1/batches", {
+        // Call the new seeded batch endpoint (no file uploads needed!)
+        const resp = await fetch("/api/v1/batches/seeded", {
           method: "POST",
-          body: formData,
         });
 
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        if (!resp.ok) {
+          const errorData = await resp.json();
+          throw new Error(errorData?.error?.message || `HTTP ${resp.status}`);
+        }
+        
         const data = await resp.json();
         renderBatchSummary(data);
       } catch (err) {
-        alert("Batch run failed: " + err.message);
+        alert("Seeded batch failed: " + err.message);
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Run Seeded 50-Record Batch`;

@@ -458,3 +458,128 @@ async def retry_failed_batch(
         skipped_rows=updated_batch.skipped_rows if updated_batch else 0,
         metadata=meta,
     )
+
+
+@router.post(
+    "/seeded",
+    response_model=BatchSummaryResponse,
+    dependencies=[Depends(verify_api_key)],
+    summary="Run a batch with auto-loaded fixture CSVs (demo/testing only)",
+)
+async def create_seeded_batch(
+    request: Request,
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Creates and runs a reconciliation batch using pre-generated fixture CSVs.
+    
+    This endpoint auto-loads the fixture bank statement and ledger CSVs that match
+    the 50-payment fixture dataset, eliminating the need for manual file upload.
+    
+    Requires: USE_FIXTURES=1 in .env
+    
+    Returns the same BatchSummaryResponse as the regular batch creation endpoint.
+    """
+    if settings.use_fixtures != "1":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": {
+                    "code": "FIXTURES_DISABLED",
+                    "message": "Seeded batch endpoint requires USE_FIXTURES=1 in .env",
+                }
+            },
+        )
+    
+    # Load fixture CSVs from tests/fixtures directory
+    import pathlib
+    fixtures_dir = pathlib.Path(__file__).parent.parent.parent.parent / "tests" / "fixtures"
+    bank_csv_path = fixtures_dir / "fixture_bank_statement_50.csv"
+    ledger_csv_path = fixtures_dir / "fixture_ledger_50.csv"
+    
+    if not bank_csv_path.exists() or not ledger_csv_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error": {
+                    "code": "FIXTURE_FILES_MISSING",
+                    "message": f"Fixture CSV files not found. Run: python scripts/generate_fixture_csvs.py",
+                }
+            },
+        )
+    
+    # Read CSV files
+    bank_bytes = bank_csv_path.read_bytes()
+    ledger_bytes = ledger_csv_path.read_bytes()
+    
+    logger.info("Seeded batch: auto-loaded fixture CSVs (%d bytes bank, %d bytes ledger)", 
+                len(bank_bytes), len(ledger_bytes))
+    
+    # Create batch with idempotency
+    key = idempotency_key or f"seeded_{uuid.uuid4().hex[:8]}"
+    batch, is_new = await BatchRepo.create(db, key)
+    
+    meta = build_metadata_from_request(request)
+    
+    if not is_new and batch.status == BatchStatus.COMPLETED:
+        # Return existing completed batch
+        reporter = ReporterAgent()
+        report = await reporter.generate_report(batch.id, db)
+        return BatchSummaryResponse(
+            batch_id=batch.id,
+            status=batch.status.value,
+            started_at=batch.started_at,
+            completed_at=batch.completed_at,
+            record_match_rate=report.record_match_rate,
+            amount_coverage=report.amount_coverage,
+            total_records=report.total_records,
+            matched_records=report.matched_records,
+            exception_count=report.exception_count,
+            reason_code_breakdown=report.reason_code_breakdown,
+            match_method_breakdown=report.match_method_breakdown,
+            duplicate_ledger_order_ids=batch.duplicate_ledger_order_ids,
+            skipped_rows=batch.skipped_rows,
+            metadata=meta,
+        )
+    
+    # Run the reconciliation pipeline
+    orchestrator = BatchOrchestrator()
+    try:
+        report = await orchestrator.run_pipeline(
+            batch_id=batch.id,
+            bank_csv_content=bank_bytes,
+            ledger_csv_content=ledger_bytes,
+            db=db,
+        )
+        updated_batch = await BatchRepo.get_by_id(db, batch.id)
+        return BatchSummaryResponse(
+            batch_id=batch.id,
+            status=updated_batch.status.value if updated_batch else BatchStatus.COMPLETED.value,
+            started_at=updated_batch.started_at if updated_batch else batch.started_at,
+            completed_at=updated_batch.completed_at if updated_batch else None,
+            record_match_rate=report.record_match_rate,
+            amount_coverage=report.amount_coverage,
+            total_records=report.total_records,
+            matched_records=report.matched_records,
+            exception_count=report.exception_count,
+            reason_code_breakdown=report.reason_code_breakdown,
+            match_method_breakdown=report.match_method_breakdown,
+            duplicate_ledger_order_ids=updated_batch.duplicate_ledger_order_ids if updated_batch else 0,
+            skipped_rows=updated_batch.skipped_rows if updated_batch else 0,
+            metadata=meta,
+        )
+    except Exception as e:
+        logger.exception("Seeded batch execution failed: %s", str(e))
+        updated_batch = await BatchRepo.get_by_id(db, batch.id)
+        current_status = updated_batch.status.value if updated_batch else BatchStatus.FAILED_RECONCILIATION.value
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error": {
+                    "code": current_status,
+                    "message": f"Seeded batch reconciliation failed: {str(e)}",
+                    "batch_id": str(batch.id),
+                }
+            },
+        )
