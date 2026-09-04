@@ -267,17 +267,28 @@
         return;
       }
 
+      const btn = document.getElementById("submitUploadBtn");
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<svg class="animate-spin inline-block -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg> Processing...`;
+
       const formData = new FormData();
       formData.append("bank_csv", bankFile);
       formData.append("ledger_csv", ledgerFile);
 
       try {
         const resp = await fetch("/api/v1/batches", { method: "POST", body: formData });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        if (!resp.ok) {
+          const errorData = await resp.json();
+          throw new Error(errorData?.error?.message || `HTTP ${resp.status}`);
+        }
         const data = await resp.json();
         renderBatchSummary(data);
       } catch (err) {
         alert("Upload run failed: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
       }
     });
 

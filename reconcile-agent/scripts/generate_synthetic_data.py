@@ -228,6 +228,26 @@ def generate_dataset(seed: int = 42) -> None:
         for row in bank_rows:
             writer.writerow([row["utr"], row["amount_paise"], row["value_date"], row["narration"]])
 
+    # Also save to fixture files for seeded batches
+    fixture_bank_path = os.path.join(fixtures_dir, "fixture_bank_statement_50.csv")
+    with open(fixture_bank_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["utr", "amount_paise", "value_date", "narration"])
+        for row in bank_rows:
+            writer.writerow([row["utr"], row["amount_paise"], row["value_date"], row["narration"]])
+
+    fixture_ledger_path = os.path.join(fixtures_dir, "fixture_ledger_50.csv")
+    with open(fixture_ledger_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["order_id", "expected_amount_paise", "customer_ref", "invoice_date"])
+        for p in payments:
+            writer.writerow([
+                p["order_id"],
+                p["amount_paise"],
+                p["customer_ref"],
+                p["settlement_date"],
+            ])
+
     # 4. Save Ground Truth JSON Oracle
     ground_truth = {
         "metadata": {
