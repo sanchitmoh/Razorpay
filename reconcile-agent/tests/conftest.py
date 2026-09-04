@@ -21,14 +21,7 @@ from app.models.reconciliation_result import ReconciliationResult
 
 # Enable test fixtures for test runs (§10.1)
 os.environ["USE_FIXTURES"] = "1"
-
-# Reload settings BEFORE any app imports to ensure fixture mode is enabled
-# Must be done at module level before test client fixture loads the app
-from app.core.config import Settings
-from app.core import config as config_module
-
-# Create new settings instance that will read USE_FIXTURES=1 from environment
-config_module.settings = Settings()
+settings.use_fixtures = "1"
 
 # Use isolated SQLite in-memory for testing (§10.1)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"

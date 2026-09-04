@@ -102,6 +102,11 @@ class TokenBucketRateLimiter:
         self._memory_store: dict[str, dict[str, float]] = {}
         self._redis_client: Any = None
 
+    def reset(self) -> None:
+        """Reset in-memory state and clear client for clean testing."""
+        self._memory_store.clear()
+        self._redis_client = None
+
     def _client_key(self, request: Request) -> str:
         if request.client:
             return request.client.host

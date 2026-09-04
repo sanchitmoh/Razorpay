@@ -44,7 +44,7 @@ class RazorpayClient:
         Fetch all captured payments from Razorpay API with pagination handling (§7.1).
         Fixture fallback is strictly gated behind USE_FIXTURES=1 for testing (§10.1).
         """
-        if settings.use_fixtures == "1":
+        if os.environ.get("USE_FIXTURES") == "1" or settings.use_fixtures == "1":
             if use_fixture_fallback:
                 fixture_path = os.path.join(
                     os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
@@ -133,7 +133,7 @@ class RazorpayClient:
         """
         Fetch a single payment by ID for drill-down on an exception (§7.1: GET /v1/payments/:id).
         """
-        if settings.use_fixtures == "1":
+        if os.environ.get("USE_FIXTURES") == "1" or settings.use_fixtures == "1":
             fixture_path = os.path.join(
                 os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
                 "tests",
